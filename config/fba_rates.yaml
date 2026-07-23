@@ -1,0 +1,94 @@
+# Amazon FBA 费率表（美国站 2025 年参考值）
+# 数据来源：Amazon Seller Central 公开费率
+# 定期更新日期：按需
+
+# 配送费（按尺寸分段）
+fulfillment:
+  # 小号标准尺寸
+  small_standard:
+    max_weight_oz: 16
+    max_dimensions_inch: [15, 12, 0.75]
+    fee: 3.22
+  # 大号标准尺寸
+  large_standard:
+    max_weight_lb: 20
+    max_dimensions_inch: [18, 14, 8]
+    fee_per_lb: 0.38
+    base_fee: 5.40
+  # 小号大件
+  small_oversize:
+    max_weight_lb: 70
+    max_dimensions_inch: [60, 30, 130]
+    fee_per_lb: 0.48
+    base_fee: 8.94
+  # 中号大件
+  medium_oversize:
+    max_weight_lb: 150
+    max_dimensions_inch: [108, 165, 130]
+    fee_per_lb: 0.48
+    base_fee: 11.46
+  # 大号大件
+  large_oversize:
+    max_weight_lb: 150
+    max_dimensions_inch: [108, 165, 130]
+    fee_per_lb: 0.48
+    base_fee: 77.80
+
+# 月度仓储费（每立方英尺）
+monthly_storage:
+  jan_sep: 0.78
+  oct_dec: 2.40
+
+# 长期仓储费（每立方英尺，存放超过 365 天）
+long_term_storage: 6.90
+
+# 销售佣金（按品类百分比）
+referral_fee:
+  default: 0.15
+  categories:
+    # 最低佣金
+    minimum: 0.30
+    # 各品类费率
+    electronics: 0.08
+    personal_computers: 0.06
+    home_and_kitchen: 0.15
+    sports: 0.15
+    toys: 0.15
+    beauty: 0.15
+    health: 0.15
+    baby: 0.15
+    pets: 0.15
+    office: 0.15
+    tools: 0.15
+    garden: 0.15
+    automotive: 0.12
+    clothing: 0.17
+    shoes: 0.15
+    jewelry: 0.20
+    watches: 0.16
+    luggage: 0.15
+    groceries: 0.15
+    books: 0.15
+    video_games: 0.15
+    software: 0.15
+    music: 0.15
+    dvd: 0.15
+
+# 广告费估算
+advertising:
+  # 默认 ACoS 假设
+  default_acos: 0.20
+  # 按竞争度调整
+  low_competition_acos: 0.12
+  high_competition_acos: 0.30
+
+# 默认参数
+defaults:
+  # 默认采购成本占售价的比例（无数据时估算）
+  cost_ratio: 0.30
+  # 默认头程物流占售价的比例
+  head_haul_ratio: 0.08
+  # 默认退货率
+  return_rate: 0.03
+  # 利润率达标线
+  profit_margin_threshold: 0.15

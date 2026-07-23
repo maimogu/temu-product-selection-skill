@@ -1,0 +1,40 @@
+# 综合得分权重配置
+# 修改权重后重新运行 metrics.py 即可生效
+
+weights:
+  traffic: 0.25
+  conversion: 0.25
+  aov: 0.20
+  growth: 0.20
+  risk: 0.10
+
+thresholds:
+  # 高风险品牌名单（大小写不敏感）
+  high_risk_brands:
+    - "Nike"
+    - "Adidas"
+    - "Apple"
+    - "Samsung"
+    - "Disney"
+    - "Sony"
+    - "Microsoft"
+    - "Google"
+    - "Amazon"
+    - "Lego"
+    - "Hasbro"
+    - "Mattel"
+    - "Nintendo"
+    - "Canon"
+    - "Nikon"
+    - "Dyson"
+    - "GoPro"
+    - "Bose"
+    - "JBL"
+    - "Philips"
+  # 评论数量级封顶值
+  review_cap: 500
+  # 价格最优区间（类目均价的倍数）
+  price_optimal_min_ratio: 0.5
+  price_optimal_max_ratio: 2.0
+  # 新品月数上限
+  new_product_months: 12

@@ -1,0 +1,76 @@
+# 关键词 8 维分类规则
+# 每个分类定义一组正则模式，按优先级从高到低匹配
+# 关键词匹配到某个分类后即停止，未匹配的归入 "其他"
+
+categories:
+  - name: 否定词
+    tag: "negative"
+    description: "排除型关键词，用于广告否定投放"
+    patterns:
+      - "fake|replica|counterfeit|knock.?off"
+      - "broken|damaged|defective|used|refurbished"
+      - "repair|replacement.?part|spare.?part"
+      - "free|cheap|wholesale|bulk|lot"
+      - "xxx|adult|sex|porn"
+
+  - name: 品牌词
+    tag: "brand"
+    description: "包含品牌名称的关键词，广告精准匹配"
+    patterns:
+      - "nike|adidas|apple|samsung|sony|bose|dyson|lego|nintendo|canon"
+      - "anker|taotronics|ravpower|aukey|mpow|soundcore"
+      - "kitchenaid|cuisinart|oxo|pyrex|instant.?pot|ninja"
+      - "yeti|hydro.?flask|contigo|stanley|thermos"
+      - "crest|oral.?b|philips|braun|panasonic"
+      - "^(?:nike|adidas|apple|samsung|sony|bose|dyson|lego|nintendo|canon|anker|taotronics|ravpower|aukey|mpow|soundcore|kitchenaid|cuisinart|oxo|pyrex|instant|ninja|yeti|hydro|contigo|stanley|thermos|crest|oral|philips|braun|panasonic)$"
+
+  - name: 材质词
+    tag: "material"
+    description: "材料/成分描述，用于产品差异化"
+    patterns:
+      - "silicone|stainless.?steel|bamboo|wooden|ceramic|glass"
+      - "cotton|linen|wool|leather|polyester|nylon|carbon.?fiber"
+      - "plastic|metal|aluminum|copper|iron|marble|granite"
+      - "organic|natural|eco.?friendly|biodegradable|recycled"
+      - "waterproof|dust.?proof|shock.?proof|rust.?proof"
+
+  - name: 场景词
+    tag: "scenario"
+    description: "使用场景/场合，用于场景广告组"
+    patterns:
+      - "kitchen|cooking|baking|dining|bbq|camping|hiking"
+      - "office|desk|home.?office|travel|car|outdoor"
+      - "bedroom|bathroom|living.?room|garage|garden|patio"
+      - "party|wedding|christmas|halloween|thanksgiving"
+      - "gym|workout|yoga|fitness|running|swimming"
+      - "baby|kids|toddler|infant|newborn|pets?|dog|cat"
+
+  - name: 属性词
+    tag: "attribute"
+    description: "产品属性/规格，用于精准匹配"
+    patterns:
+      - "small|medium|large|mini|compact|portable|foldable"
+      - "heavy.?duty|lightweight|durable|sturdy|premium|professional"
+      - "adjustable|rechargeable|cordless|wireless|bluetooth|usb"
+      - "digital|electric|automatic|manual|smart|remote.?control"
+      - "black|white|blue|red|green|pink|grey|gold|silver"
+      - "set|kit|pack|bundle|combo|starter|beginner"
+
+  - name: 功能词
+    tag: "function"
+    description: "产品功能/用途，用于广泛匹配"
+    patterns:
+      - "storage|organizer|holder|rack|shelf|basket|container"
+      - "cleaner|brush|scrubber|sponge|duster|mop|cloths?"
+      - "cutter|slicer|grater|peeler|opener|press|masher"
+      - "timer|thermometer|scale|measur|tester|monitor"
+      - "light|lantern|flashlight|headlamp|night.?light|lamp"
+      - "charger|cable|adapter|converter|power.?bank|battery"
+      - "cover|case|sleeve|protector|mat|pad|liner|cushion"
+
+  - name: 核心词
+    tag: "core"
+    description: "核心品类词，用于广告主投放"
+    patterns:
+      - "^[a-z]+$"
+      - "^[a-z]+ [a-z]+$"

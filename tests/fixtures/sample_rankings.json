@@ -1,0 +1,22 @@
+[
+    {"asin": "B000000001", "bsr_rank": 1, "price": 29.99, "star_rating": 4.5, "review_count": 3200, "brand": "GenericBrand", "estimated_sales": 5000, "estimated_revenue": 149950.0, "snapshot_date": "2026-07-06"},
+    {"asin": "B000000001", "bsr_rank": 2, "price": 29.99, "star_rating": 4.5, "review_count": 3250, "brand": "GenericBrand", "estimated_sales": 4800, "estimated_revenue": 143952.0, "snapshot_date": "2026-07-13"},
+    {"asin": "B000000001", "bsr_rank": 1, "price": 28.99, "star_rating": 4.5, "review_count": 3300, "brand": "GenericBrand", "estimated_sales": 5200, "estimated_revenue": 150748.0, "snapshot_date": "2026-07-20"},
+    {"asin": "B000000002", "bsr_rank": 50, "price": 0.0, "star_rating": 0.0, "review_count": 0, "brand": "", "estimated_sales": 0, "estimated_revenue": 0.0, "snapshot_date": "2026-07-20"},
+    {"asin": "B000000003", "bsr_rank": 5, "price": 99.99, "star_rating": 5.0, "review_count": 8000, "brand": "Nike", "estimated_sales": 3000, "estimated_revenue": 299970.0, "snapshot_date": "2026-07-06"},
+    {"asin": "B000000003", "bsr_rank": 5, "price": 99.99, "star_rating": 5.0, "review_count": 8100, "brand": "Nike", "estimated_sales": 3100, "estimated_revenue": 309969.0, "snapshot_date": "2026-07-13"},
+    {"asin": "B000000003", "bsr_rank": 4, "price": 97.99, "star_rating": 5.0, "review_count": 8200, "brand": "Nike", "estimated_sales": 3200, "estimated_revenue": 313568.0, "snapshot_date": "2026-07-20"},
+    {"asin": "B000000004", "bsr_rank": 100, "price": 9.99, "star_rating": 3.0, "review_count": 50, "brand": "NoName", "estimated_sales": 100, "estimated_revenue": 999.0, "snapshot_date": "2026-07-20"},
+    {"asin": "B000000005", "bsr_rank": 10, "price": 49.99, "star_rating": 4.0, "review_count": 1500, "brand": "MidTier", "estimated_sales": 2000, "estimated_revenue": 99980.0, "snapshot_date": "2026-07-06"},
+    {"asin": "B000000005", "bsr_rank": 8, "price": 47.99, "star_rating": 4.2, "review_count": 1600, "brand": "MidTier", "estimated_sales": 2200, "estimated_revenue": 105578.0, "snapshot_date": "2026-07-13"},
+    {"asin": "B000000005", "bsr_rank": 6, "price": 46.99, "star_rating": 4.3, "review_count": 1700, "brand": "MidTier", "estimated_sales": 2500, "estimated_revenue": 117475.0, "snapshot_date": "2026-07-20"},
+    {"asin": "B000000006", "bsr_rank": 30, "price": 19.99, "star_rating": 4.7, "review_count": 5000, "brand": "Apple", "estimated_sales": 1500, "estimated_revenue": 29985.0, "snapshot_date": "2026-07-20"},
+    {"asin": "B000000007", "bsr_rank": 15, "price": 34.99, "star_rating": 4.0, "review_count": 200, "brand": "NewBrand", "estimated_sales": 800, "estimated_revenue": 27992.0, "snapshot_date": "2026-07-20"},
+    {"asin": "B000000008", "bsr_rank": 80, "price": 14.99, "star_rating": 3.5, "review_count": 30, "brand": "", "estimated_sales": 200, "estimated_revenue": 2998.0, "snapshot_date": "2026-07-13"},
+    {"asin": "B000000008", "bsr_rank": 75, "price": 13.99, "star_rating": 3.5, "review_count": 35, "brand": "", "estimated_sales": 250, "estimated_revenue": 3497.5, "snapshot_date": "2026-07-20"},
+    {"asin": "B000000009", "bsr_rank": 2, "price": 79.99, "star_rating": 4.8, "review_count": 12000, "brand": "Samsung", "estimated_sales": 4500, "estimated_revenue": 359955.0, "snapshot_date": "2026-07-13"},
+    {"asin": "B000000009", "bsr_rank": 3, "price": 78.99, "star_rating": 4.8, "review_count": 12200, "brand": "Samsung", "estimated_sales": 4400, "estimated_revenue": 347556.0, "snapshot_date": "2026-07-20"},
+    {"asin": "B000000010", "bsr_rank": 25, "price": 59.99, "star_rating": 4.6, "review_count": 800, "brand": "GoodBrand", "estimated_sales": 1200, "estimated_revenue": 71988.0, "snapshot_date": "2026-07-06"},
+    {"asin": "B000000010", "bsr_rank": 22, "price": 58.99, "star_rating": 4.6, "review_count": 850, "brand": "GoodBrand", "estimated_sales": 1300, "estimated_revenue": 76687.0, "snapshot_date": "2026-07-13"},
+    {"asin": "B000000010", "bsr_rank": 20, "price": 57.99, "star_rating": 4.6, "review_count": 900, "brand": "GoodBrand", "estimated_sales": 1400, "estimated_revenue": 81186.0, "snapshot_date": "2026-07-20"}
+]
