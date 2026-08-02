@@ -8,10 +8,12 @@
 #   - FEISHU_APP_ID              飞书应用 App ID
 #   - FEISHU_APP_SECRET          飞书应用 App Secret
 #   - FEISHU_APP_TOKEN           飞书多维表格 App Token
+#   - FEISHU_CATEGORIES_TABLE_ID  类目管理表 ID（crawl 需要）
 #   - FEISHU_SNAPSHOTS_TABLE_ID  榜单快照表 ID
+#   - FEISHU_PRODUCTS_TABLE_ID   商品详情表 ID（crawl 需要）
 #   - FEISHU_METRICS_TABLE_ID    指标得分表 ID
 #   - FEISHU_PROFIT_TABLE_ID     利润分析表 ID（可选）
-#   - KEEPA_API_KEY              Keepa API Key（采集需要）
+#   - KEEPA_API_KEY              Keepa API Key（采集需要，skip_crawl=true 时可省）
 #
 # 产物：
 #   - reports/ 目录下的 HTML + Excel 报告会作为 artifact 上传，保留 30 天
@@ -79,14 +81,18 @@ jobs:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
+          FEISHU_CATEGORIES_TABLE_ID: ${{ secrets.FEISHU_CATEGORIES_TABLE_ID }}
           FEISHU_SNAPSHOTS_TABLE_ID: ${{ secrets.FEISHU_SNAPSHOTS_TABLE_ID }}
+          FEISHU_PRODUCTS_TABLE_ID: ${{ secrets.FEISHU_PRODUCTS_TABLE_ID }}
           FEISHU_METRICS_TABLE_ID: ${{ secrets.FEISHU_METRICS_TABLE_ID }}
         run: |
           missing=()
           [ -z "$FEISHU_APP_ID" ] && missing+=("FEISHU_APP_ID")
           [ -z "$FEISHU_APP_SECRET" ] && missing+=("FEISHU_APP_SECRET")
           [ -z "$FEISHU_APP_TOKEN" ] && missing+=("FEISHU_APP_TOKEN")
+          [ -z "$FEISHU_CATEGORIES_TABLE_ID" ] && missing+=("FEISHU_CATEGORIES_TABLE_ID")
           [ -z "$FEISHU_SNAPSHOTS_TABLE_ID" ] && missing+=("FEISHU_SNAPSHOTS_TABLE_ID")
+          [ -z "$FEISHU_PRODUCTS_TABLE_ID" ] && missing+=("FEISHU_PRODUCTS_TABLE_ID")
           [ -z "$FEISHU_METRICS_TABLE_ID" ] && missing+=("FEISHU_METRICS_TABLE_ID")
           if [ ${#missing[@]} -gt 0 ]; then
             echo "::error::缺少必需 Secrets: ${missing[*]}"
@@ -101,7 +107,9 @@ jobs:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
+          FEISHU_CATEGORIES_TABLE_ID: ${{ secrets.FEISHU_CATEGORIES_TABLE_ID }}
           FEISHU_SNAPSHOTS_TABLE_ID: ${{ secrets.FEISHU_SNAPSHOTS_TABLE_ID }}
+          FEISHU_PRODUCTS_TABLE_ID: ${{ secrets.FEISHU_PRODUCTS_TABLE_ID }}
           FEISHU_METRICS_TABLE_ID: ${{ secrets.FEISHU_METRICS_TABLE_ID }}
           FEISHU_PROFIT_TABLE_ID: ${{ secrets.FEISHU_PROFIT_TABLE_ID }}
           KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
