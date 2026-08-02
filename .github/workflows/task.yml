@@ -1,0 +1,188 @@
+# 选品任务编排 - GitHub Actions Workflow
+#
+# 触发方式：
+#   1. 手动触发（workflow_dispatch）：可在 Actions 页面选择参数运行
+#   2. 定时触发（schedule）：每周一北京时间 09:00 自动执行
+#
+# 所需 Secrets（在仓库 Settings → Secrets and variables → Actions 配置）：
+#   - FEISHU_APP_ID              飞书应用 App ID
+#   - FEISHU_APP_SECRET          飞书应用 App Secret
+#   - FEISHU_APP_TOKEN           飞书多维表格 App Token
+#   - FEISHU_SNAPSHOTS_TABLE_ID  榜单快照表 ID
+#   - FEISHU_METRICS_TABLE_ID    指标得分表 ID
+#   - FEISHU_PROFIT_TABLE_ID     利润分析表 ID（可选）
+#   - KEEPA_API_KEY              Keepa API Key（采集需要）
+#
+# 产物：
+#   - reports/ 目录下的 HTML + Excel 报告会作为 artifact 上传，保留 30 天
+
+name: 选品任务编排
+
+on:
+  # 手动触发，支持参数
+  workflow_dispatch:
+    inputs:
+      category:
+        description: "类目名称（默认全部类目）"
+        required: false
+        default: "全部类目"
+        type: string
+      cycle:
+        description: "周期标签（默认本周）"
+        required: false
+        default: "本周"
+        type: string
+      skip_crawl:
+        description: "跳过采集步骤（仅基于已有数据计算）"
+        required: false
+        default: false
+        type: boolean
+      operator:
+        description: "操作人（用于任务元数据）"
+        required: false
+        default: "github-actions"
+        type: string
+
+  # 定时触发：每周一北京时间 09:00（UTC 周日 01:00）
+  schedule:
+    - cron: "0 1 * * 0"
+
+# 同一任务并发时取消旧任务，避免重复执行
+concurrency:
+  group: product-selection-task
+  cancel-in-progress: false
+
+jobs:
+  run-task:
+    name: 执行选品任务
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 校验必需 Secrets
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
+          FEISHU_SNAPSHOTS_TABLE_ID: ${{ secrets.FEISHU_SNAPSHOTS_TABLE_ID }}
+          FEISHU_METRICS_TABLE_ID: ${{ secrets.FEISHU_METRICS_TABLE_ID }}
+        run: |
+          missing=()
+          [ -z "$FEISHU_APP_ID" ] && missing+=("FEISHU_APP_ID")
+          [ -z "$FEISHU_APP_SECRET" ] && missing+=("FEISHU_APP_SECRET")
+          [ -z "$FEISHU_APP_TOKEN" ] && missing+=("FEISHU_APP_TOKEN")
+          [ -z "$FEISHU_SNAPSHOTS_TABLE_ID" ] && missing+=("FEISHU_SNAPSHOTS_TABLE_ID")
+          [ -z "$FEISHU_METRICS_TABLE_ID" ] && missing+=("FEISHU_METRICS_TABLE_ID")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::缺少必需 Secrets: ${missing[*]}"
+            echo "请在仓库 Settings → Secrets and variables → Actions 中配置"
+            exit 1
+          fi
+          echo "✓ 所需 Secrets 已配置"
+
+      - name: 执行选品任务
+        id: run_task
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          FEISHU_APP_TOKEN: ${{ secrets.FEISHU_APP_TOKEN }}
+          FEISHU_SNAPSHOTS_TABLE_ID: ${{ secrets.FEISHU_SNAPSHOTS_TABLE_ID }}
+          FEISHU_METRICS_TABLE_ID: ${{ secrets.FEISHU_METRICS_TABLE_ID }}
+          FEISHU_PROFIT_TABLE_ID: ${{ secrets.FEISHU_PROFIT_TABLE_ID }}
+          KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}/scripts
+        run: |
+          SKIP_CRAWD_FLAG=""
+          if [ "${{ inputs.skip_crawl }}" = "true" ]; then
+            SKIP_CRAWD_FLAG="--skip-crawl"
+          fi
+
+          # 定时触发时 inputs 为空，使用默认值
+          CATEGORY="${{ inputs.category }}"
+          CYCLE="${{ inputs.cycle }}"
+          OPERATOR="${{ inputs.operator }}"
+          [ -z "$CATEGORY" ] && CATEGORY="全部类目"
+          [ -z "$CYCLE" ] && CYCLE="本周"
+          [ -z "$OPERATOR" ] && OPERATOR="github-actions-schedule"
+
+          echo "==> 任务参数: category=$CATEGORY cycle=$CYCLE skip_crawl=${SKIP_CRAWD_FLAG:-false} operator=$OPERATOR"
+
+          python scripts/task_orchestrator.py \
+            --category "$CATEGORY" \
+            --cycle "$CYCLE" \
+            --operator "$OPERATOR" \
+            --trigger "github-actions" \
+            $SKIP_CRAWD_FLAG \
+            | tee task_output.json
+
+          # 提取任务状态用于步骤判断
+          # python task_orchestrator.py 在失败时退出码非 0，但 we want to continue 上传 artifact
+          # 所以用 || true 避免中断
+          exit 0
+
+      - name: 解析任务状态
+        id: parse_status
+        if: always()
+        run: |
+          if [ -f task_output.json ]; then
+            STATUS=$(python -c "import json,sys; d=json.load(sys.stdin); print(d.get('status','UNKNOWN'))" < task_output.json || echo "UNKNOWN")
+            TASK_ID=$(python -c "import json,sys; d=json.load(sys.stdin); print(d.get('task_id',''))" < task_output.json || echo "")
+            echo "status=$STATUS" >> $GITHUB_OUTPUT
+            echo "task_id=$TASK_ID" >> $GITHUB_OUTPUT
+            echo "任务状态: $STATUS"
+            echo "任务 ID: $TASK_ID"
+          else
+            echo "status=UNKNOWN" >> $GITHUB_OUTPUT
+            echo "task_id=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 上传报告产物
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ steps.parse_status.outputs.task_id || 'unknown' }}
+          path: |
+            reports/
+            task_output.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: 任务失败通知
+        if: failure() || steps.parse_status.outputs.status == 'FAILED'
+        run: |
+          echo "::warning::任务执行失败"
+          echo "状态: ${{ steps.parse_status.outputs.status }}"
+          echo "任务 ID: ${{ steps.parse_status.outputs.task_id }}"
+          echo "请下载 reports artifact 查看 task_output.json 中的 failure_reason"
+
+      - name: 任务摘要
+        if: always()
+        run: |
+          echo "## 选品任务执行结果" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **任务 ID**: ${{ steps.parse_status.outputs.task_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **状态**: ${{ steps.parse_status.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **触发方式**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **报告产物**: 保留 30 天，可在 Artifacts 下载" >> $GITHUB_STEP_SUMMARY
+          if [ -f task_output.json ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 执行输出" >> $GITHUB_STEP_SUMMARY
+            echo '```json' >> $GITHUB_STEP_SUMMARY
+            cat task_output.json >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
