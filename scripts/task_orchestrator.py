@@ -145,7 +145,7 @@ class TaskOrchestrator:
 
         app_id = os.environ.get("FEISHU_APP_ID")
         app_secret = os.environ.get("FEISHU_APP_SECRET")
-        app_token = os.environ.get("FEESHU_APP_TOKEN") or os.environ.get("FEISHU_APP_TOKEN")
+        app_token = os.environ.get("FEISHU_APP_TOKEN")
         metrics_table_id = os.environ.get("FEISHU_METRICS_TABLE_ID")
         profit_table_id = os.environ.get("FEISHU_PROFIT_TABLE_ID", "")
 
