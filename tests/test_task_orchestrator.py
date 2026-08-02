@@ -122,6 +122,28 @@ class TestTaskOrchestrator:
         assert "decide" not in step_names
         assert "report" not in step_names
 
+    def test_run_task_crawl_failure_degrades(self, tmp_orchestrator):
+        """crawl 失败时降级为 SKIPPED，不阻断后续步骤。"""
+        os.makedirs(tmp_orchestrator.scripts_dir, exist_ok=True)
+        # crawl.py 退出码非 0
+        with open(os.path.join(tmp_orchestrator.scripts_dir, "crawl.py"), "w") as f:
+            f.write("import sys; sys.exit(1)\n")
+        # metrics.py 和 profit_calc.py 成功
+        for name in ("metrics.py", "profit_calc.py"):
+            with open(os.path.join(tmp_orchestrator.scripts_dir, name), "w") as f:
+                f.write("print('ok')\n")
+
+        result = tmp_orchestrator.run_task(skip_crawl=False)
+        # crawl 失败但任务整体不应失败（降级）
+        assert result.status == "SUCCESS"
+        crawl_step = next(s for s in result.steps if s.name == "crawl.py")
+        assert crawl_step.status == "SKIPPED"
+        assert "原失败已降级" in crawl_step.failure_reason
+        # 后续步骤正常执行
+        step_names = [s.name for s in result.steps]
+        assert "decide" in step_names
+        assert "report" in step_names
+
     def test_load_decision_inputs_no_creds(self, tmp_orchestrator, monkeypatch):
         """无飞书凭证时返回空列表。"""
         # 清除所有飞书环境变量

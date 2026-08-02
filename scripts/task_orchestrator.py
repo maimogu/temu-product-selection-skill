@@ -89,7 +89,7 @@ class TaskOrchestrator:
     def _now(self) -> str:
         return datetime.now().isoformat()
 
-    def _run_subprocess(self, script_name: str, args: List[str] = None) -> StepResult:
+    def _run_subprocess(self, script_name: str, args: List[str] = None, timeout: int = 600) -> StepResult:
         """运行 scripts/ 下的子脚本。
 
         失败不抛异常，返回 FAILED 状态的 StepResult。
@@ -103,13 +103,13 @@ class TaskOrchestrator:
             return step
 
         cmd = [sys.executable, script_path] + (args or [])
-        logger.info(f"运行子进程: {' '.join(cmd)}")
+        logger.info(f"运行子进程: {' '.join(cmd)} (timeout={timeout}s)")
         try:
             result = subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=600,
+                timeout=timeout,
                 cwd=self.skill_root,
                 env={**os.environ, "PYTHONPATH": self.scripts_dir},
             )
@@ -269,18 +269,24 @@ class TaskOrchestrator:
         )
         logger.info(f"任务开始: {task_id} (category={category}, cycle={cycle}, skip_crawl={skip_crawl})")
 
-        # Step 1: crawl（可跳过）
+        # Step 1: crawl（可跳过；失败时降级为 SKIPPED，不阻断后续步骤）
+        # 注意：GitHub Actions 环境无法运行 keepa-mcp（npx 子进程会卡住），
+        # 因此云端运行必须 skip_crawl=True。本地运行才允许 skip_crawl=False。
         if skip_crawl:
             step_crawl = StepResult(name="crawl", status="SKIPPED", started_at=self._now(), finished_at=self._now())
             logger.info("跳过 crawl 步骤")
         else:
-            step_crawl = self._run_subprocess("crawl.py")
+            # crawl 单独使用较短的超时（300s），避免 keepa-mcp 卡住拖垮整个任务
+            step_crawl = self._run_subprocess("crawl.py", timeout=300)
         task.steps.append(step_crawl)
 
         if step_crawl.status == "FAILED":
-            task.status = "FAILED"
-            task.failure_reason = f"crawl 失败: {step_crawl.failure_reason}"
-            return self._finalize(task)
+            # crawl 失败不阻断任务，降级为基于已有飞书数据计算
+            logger.warning(
+                f"crawl 失败，降级为基于已有飞书数据计算: {step_crawl.failure_reason}"
+            )
+            step_crawl.status = "SKIPPED"
+            step_crawl.failure_reason = f"原失败已降级: {step_crawl.failure_reason}"
 
         # Step 2: metrics
         step_metrics = self._run_subprocess("metrics.py")

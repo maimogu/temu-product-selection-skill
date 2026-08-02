@@ -35,9 +35,9 @@ on:
         default: "本周"
         type: string
       skip_crawl:
-        description: "跳过采集步骤（仅基于已有数据计算）"
+        description: "跳过采集步骤（GitHub Actions 无法运行 keepa-mcp，默认 true）"
         required: false
-        default: false
+        default: true
         type: boolean
       operator:
         description: "操作人（用于任务元数据）"
