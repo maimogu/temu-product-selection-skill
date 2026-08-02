@@ -10,6 +10,7 @@
 #   bash bootstrap.sh metrics    # 计算指标
 #   bash bootstrap.sh keywords   # 关键词调研
 #   bash bootstrap.sh profit     # FBA利润计算
+#   bash bootstrap.sh task       # 任务编排（采集→指标→利润→决策→报告）
 #   bash bootstrap.sh test       # 运行测试
 #   bash bootstrap.sh python -- script.py [args]  # 直接运行 Python 脚本
 # =============================================================================
@@ -93,6 +94,10 @@ case "${1:-}" in
         shift
         exec "$RT_PYTHON" "$SCRIPTS_DIR/profit_calc.py" "$@"
         ;;
+    task)
+        shift
+        exec "$RT_PYTHON" "$SCRIPTS_DIR/task_orchestrator.py" "$@"
+        ;;
     test)
         shift
         cd "$SKILL_ROOT"
@@ -113,7 +118,7 @@ case "${1:-}" in
         $RT_PYTHON -c "
 import sys
 print(f'Python: {sys.version}')
-modules = ['httpx', 'yaml', 'pytest', 'lark_oapi']
+modules = ['httpx', 'yaml', 'pytest', 'lark_oapi', 'jinja2', 'openpyxl']
 for m in modules:
     try:
         __import__(m)
@@ -139,6 +144,7 @@ for m in modules:
         echo "  metrics     计算五维指标综合得分"
         echo "  keywords    关键词调研与8维分类"
         echo "  profit      FBA利润计算"
+        echo "  task        任务编排（采集→指标→利润→决策→报告）"
         echo "  test        运行测试 (pytest tests/ -v)"
         echo "  check       检查运行时环境和依赖"
         echo "  python --   <script.py> [args]  直接运行 Python 脚本"
@@ -148,6 +154,7 @@ for m in modules:
         echo "  bash bootstrap.sh metrics"
         echo "  bash bootstrap.sh keywords"
         echo "  bash bootstrap.sh profit"
+        echo "  bash bootstrap.sh task --skip-crawl"
         echo "  bash bootstrap.sh test"
         echo "  bash bootstrap.sh check"
         exit 1

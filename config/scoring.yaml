@@ -38,3 +38,15 @@ thresholds:
   price_optimal_max_ratio: 2.0
   # 新品月数上限
   new_product_months: 12
+
+# 决策引擎阈值（Phase 1）
+# 用于 decision_engine.py 输出 GO / WATCH / NO-GO 三态
+decision:
+  go:
+    min_composite: 75        # 综合得分下限
+    min_profit_margin: 0.15  # 利润率下限（15%）
+    min_risk_score: 60       # 风险得分下限（越高越安全）
+  no_go:
+    max_composite: 40        # 综合得分低于此值 → NO-GO
+    max_risk_score: 30       # 风险得分低于此值 → NO-GO（高风险品牌）
+    max_profit_margin: 0.0   # 利润率低于此值 → NO-GO（亏损）
