@@ -3,3 +3,7 @@
 __pycache__/
 *.pyc
 .env
+
+# 生成的报告与任务元数据（保留目录但不提交产物）
+reports/*
+!reports/.gitkeep
