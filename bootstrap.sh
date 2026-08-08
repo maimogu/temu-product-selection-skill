@@ -52,8 +52,22 @@ setup_venv() {
         "$SYSTEM_PYTHON" -m venv --clear "$VENV_DIR"
         echo "[INFO] 正在安装依赖..." >&2
         "$VENV_DIR/bin/pip" install --quiet -r "$REQUIREMENTS"
+        setup_playwright_browser
         echo "[INFO] 虚拟环境初始化完成。" >&2
     fi
+}
+
+setup_playwright_browser() {
+    if [ -f "$VENV_DIR/.playwright-browsers/chromium-installed" ]; then
+        return 0
+    fi
+    echo "[INFO] 正在安装 Playwright Chromium 浏览器..." >&2
+    "$VENV_DIR/bin/playwright" install chromium --with-deps 2>/dev/null \
+        || "$VENV_DIR/bin/playwright" install chromium 2>/dev/null \
+        || echo "[WARN] Playwright Chromium 安装失败，浏览器采集通道将不可用" >&2
+    mkdir -p "$VENV_DIR/.playwright-browsers"
+    touch "$VENV_DIR/.playwright-browsers/chromium-installed" 2>/dev/null || true
+    echo "[INFO] Playwright Chromium 安装完成。" >&2
 }
 
 # --- 确保 venv 依赖与 requirements.txt 同步 ---
@@ -71,6 +85,7 @@ sync_deps() {
 
 setup_venv
 sync_deps
+setup_playwright_browser
 
 # --- venv Python ---
 RT_PYTHON="$VENV_DIR/bin/python"
@@ -118,7 +133,7 @@ case "${1:-}" in
         $RT_PYTHON -c "
 import sys
 print(f'Python: {sys.version}')
-modules = ['httpx', 'yaml', 'pytest', 'lark_oapi', 'jinja2', 'openpyxl']
+modules = ['httpx', 'yaml', 'pytest', 'lark_oapi', 'jinja2', 'openpyxl', 'playwright']
 for m in modules:
     try:
         __import__(m)

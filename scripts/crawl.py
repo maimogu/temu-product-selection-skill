@@ -1,10 +1,11 @@
 """采集主入口。
 
 编排采集流程：
-1. 读取飞书「类目管理」表获取启用的类目
-2. 对每个类目尝试 keepa-mcp 获取 Best Sellers
-3. keepa-mcp 失败时降级到 agent-browser
-4. 将采集结果写入飞书「榜单快照」表，并更新（非跳过）「商品详情」表
+1. 读取飞书「类目管理」表获取启用的类目（含 platform 字段，支持 amazon/temu）
+2. 通道优先级：
+   - Amazon: Playwright 浏览器 → keepa-mcp → agent-browser
+   - Temu:   Playwright 浏览器（支持住宅代理）
+3. 将采集结果写入飞书「榜单快照」表，并更新（非跳过）「商品详情」表
 """
 
 import os
@@ -23,6 +24,14 @@ if _SCRIPTS_DIR not in sys.path:
 from feishu_client import FeishuClient, FeishuAPIError
 from keepa_client import KeepaClient, KeepaError
 from browser_crawler import parse_bestseller_page
+
+# Playwright 通道：延迟导入避免未安装时报错
+def _import_playwright_crawl():
+    try:
+        from playwright_crawler import crawl_by_url, build_temu_proxy_from_env
+        return crawl_by_url, build_temu_proxy_from_env
+    except Exception:
+        return None, None
 
 logging.basicConfig(
     level=logging.INFO,
@@ -132,10 +141,21 @@ class CrawlOrchestrator:
             else:
                 name = name_field
 
+            # 平台字段：可选，默认 "amazon"
+            platform_field = fields.get("平台") or fields.get("platform")
+            if isinstance(platform_field, dict):
+                platform = platform_field.get("text", "amazon")
+            elif isinstance(platform_field, str):
+                platform = platform_field
+            else:
+                platform = "amazon"
+            platform = (platform or "amazon").lower()
+
             categories.append({
                 "record_id": record.get("record_id"),
                 "name": name,
                 "url": url,
+                "platform": platform,
             })
 
         logger.info(f"获取到 {len(categories)} 个启用的类目")
@@ -245,6 +265,45 @@ class CrawlOrchestrator:
             logger.error(f"agent-browser 采集失败: {category_name}: {e}")
             return []
 
+    def crawl_via_playwright(
+        self, category_name: str, category_url: str, platform: str
+    ) -> List[Dict[str, Any]]:
+        """通过 Playwright 浏览器采集（主通道）。
+
+        Args:
+            category_name: 类目名称
+            category_url: 类目 URL
+            platform: "amazon" 或 "temu"
+
+        Returns:
+            商品列表。Playwright 未安装或失败返回 []
+        """
+        crawl_fn, _proxy_fn = _import_playwright_crawl()
+        if crawl_fn is None:
+            logger.warning(
+                f"Playwright 采集通道不可用（依赖未安装）: {category_name}"
+            )
+            return []
+
+        logger.info(f"[Playwright] 采集 [{platform.upper()}] {category_name}")
+        try:
+            products = crawl_fn(
+                url=category_url,
+                platform=platform,
+                max_products=100,
+                headless=True,
+            )
+            if not products:
+                logger.warning(f"[Playwright] 返回空: {category_name}")
+                return []
+            logger.info(
+                f"[Playwright] 完成 [{platform.upper()}] {category_name}: {len(products)} 个商品"
+            )
+            return products
+        except Exception as e:
+            logger.error(f"[Playwright] 采集异常 [{platform.upper()}] {category_name}: {e}")
+            return []
+
     def write_to_feishu(
         self, category_name: str, products: List[Dict[str, Any]], snapshot_date: str
     ) -> int:
@@ -351,7 +410,12 @@ class CrawlOrchestrator:
             logger.info(f"更新商品详情: {len(to_update)} 条")
 
     def run(self, snapshot_date: str = None) -> Dict[str, Any]:
-        """执行完整采集流程。"""
+        """执行完整采集流程。
+
+        采集通道优先级（按平台）：
+        - Amazon: Playwright → keepa-mcp → agent-browser
+        - Temu:   Playwright（仅此通道，keepa 不支持 Temu）
+        """
         if snapshot_date is None:
             snapshot_date = date.today().isoformat()
 
@@ -364,22 +428,33 @@ class CrawlOrchestrator:
         total_products = 0
 
         for cat in categories:
-            # 主通道：keepa-mcp
-            products = self.crawl_via_keepa(cat["name"], cat["url"])
+            platform = cat["platform"]
+            cat_name = f"[{platform.upper()}] {cat['name']}"
 
-            # 兜底通道：agent-browser
-            if not products and self.browser_crawl_func is not None:
+            # 主通道：Playwright 浏览器（所有平台通用）
+            products = self.crawl_via_playwright(cat["name"], cat["url"], platform)
+
+            # Amazon 降级通道：keepa-mcp
+            if not products and platform == "amazon":
                 logger.warning(
-                    f"类目 {cat['name']} keepa-mcp 采集失败，降级到 agent-browser"
+                    f"类目 {cat_name} Playwright 采集失败，降级到 keepa-mcp"
+                )
+                products = self.crawl_via_keepa(cat["name"], cat["url"])
+
+            # Amazon 降级通道：agent-browser（仅 Trae 环境可用）
+            if not products and platform == "amazon" and self.browser_crawl_func is not None:
+                logger.warning(
+                    f"类目 {cat_name} keepa-mcp 也失败，降级到 agent-browser"
                 )
                 products = self.crawl_via_browser(cat["name"], cat["url"])
 
             if not products:
                 results.append({
                     "category": cat["name"],
+                    "platform": platform,
                     "count": 0,
                     "status": "failed",
-                    "error": "keepa-mcp 和 agent-browser 均未返回数据",
+                    "error": "所有采集通道均未返回数据",
                 })
                 continue
 
@@ -387,6 +462,7 @@ class CrawlOrchestrator:
             total_products += count
             results.append({
                 "category": cat["name"],
+                "platform": platform,
                 "count": count,
                 "status": "ok",
             })
