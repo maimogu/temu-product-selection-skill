@@ -8,12 +8,19 @@
 #   - FEISHU_APP_ID              飞书应用 App ID
 #   - FEISHU_APP_SECRET          飞书应用 App Secret
 #   - FEISHU_APP_TOKEN           飞书多维表格 App Token
-#   - FEISHU_CATEGORIES_TABLE_ID  类目管理表 ID（crawl 需要）
+#   - FEISHU_CATEGORIES_TABLE_ID  类目管理表 ID（crawl 需要，需含「平台」字段：amazon/temu）
 #   - FEISHU_SNAPSHOTS_TABLE_ID  榜单快照表 ID
 #   - FEISHU_PRODUCTS_TABLE_ID   商品详情表 ID（crawl 需要）
 #   - FEISHU_METRICS_TABLE_ID    指标得分表 ID
 #   - FEISHU_PROFIT_TABLE_ID     利润分析表 ID（可选）
-#   - KEEPA_API_KEY              Keepa API Key（采集需要，skip_crawl=true 时可省）
+#   - KEEPA_API_KEY              Keepa API Key（Amazon 降级通道，skip_crawl=true 时可省）
+#   - TEMU_PROXY_SERVER          Temu 住宅代理（如 http://proxy.example.com:3128，仅 Temu 采集需要）
+#   - TEMU_PROXY_USERNAME        Temu 代理用户名（可选）
+#   - TEMU_PROXY_PASSWORD        Temu 代理密码（可选）
+#
+# 采集通道优先级：
+#   Amazon: Playwright 浏览器 → keepa-mcp → agent-browser
+#   Temu:   Playwright 浏览器（支持代理）
 #
 # 产物：
 #   - reports/ 目录下的 HTML + Excel 报告会作为 artifact 上传，保留 30 天
@@ -35,7 +42,7 @@ on:
         default: "本周"
         type: string
       skip_crawl:
-        description: "跳过采集步骤（仅基于已有数据计算）"
+        description: "跳过采集步骤（Playwright 主通道在 CI 可运行，默认 false）"
         required: false
         default: false
         type: boolean
@@ -76,6 +83,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: 安装 Playwright Chromium 浏览器
+        run: |
+          python -m playwright install chromium --with-deps
+          mkdir -p .venv/.playwright-browsers
+
+      - name: 缓存 Playwright 浏览器
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt') }}
+
       - name: 校验必需 Secrets
         env:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
@@ -113,6 +131,9 @@ jobs:
           FEISHU_METRICS_TABLE_ID: ${{ secrets.FEISHU_METRICS_TABLE_ID }}
           FEISHU_PROFIT_TABLE_ID: ${{ secrets.FEISHU_PROFIT_TABLE_ID }}
           KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+          TEMU_PROXY_SERVER: ${{ secrets.TEMU_PROXY_SERVER }}
+          TEMU_PROXY_USERNAME: ${{ secrets.TEMU_PROXY_USERNAME }}
+          TEMU_PROXY_PASSWORD: ${{ secrets.TEMU_PROXY_PASSWORD }}
           PYTHONPATH: ${{ github.workspace }}/scripts
         run: |
           SKIP_CRAWD_FLAG=""
